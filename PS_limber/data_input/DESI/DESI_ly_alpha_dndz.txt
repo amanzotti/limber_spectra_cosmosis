@@ -1,0 +1,19 @@
+# dn/(dz deg^2) of DESI Ly_alpha survey
+# from table 2.6 of DESI white paper
+# BIAS
+#bLRG(z)D(z) = 1.7. For ELGs we use bELG(z)D(z) = 0.84 [170].
+#For quasars we use bQSO(z)D(z) = 1.2 (loosely based on [214]).
+1.96    115
+2.12    79
+2.28    53
+2.43    43
+2.59    37
+2.75    31
+2.91    26
+3.07    21
+3.23    16
+3.39    13
+3.55    9
+3.70    7
+3.86    5
+4.02    3

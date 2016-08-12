@@ -1,0 +1,11 @@
+age = 12.96820875402316
+#age unit = Gyr
+chistar = 13068.135884796488
+#chistar unit = Gyr
+cmbshift = 1.7474973697093146
+nz = 200
+rs_zdrag = 138.6494423838521
+thetastar = 1.0524030553630332
+#thetastar unit = 100 radian
+zdrag = 1071.4530944824219
+zstar = 1085.3118906115667
