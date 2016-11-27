@@ -103,7 +103,7 @@ def setup(options):
 
     # What matter power spectrum to use, linear Halofit etc
     dndz_filename = options.get_string(
-        option_section, "dndz_filename", default="cosmosis-standard-library/structure/PS_limber/data_input/DES/N_z_wavg_spread_model_0.2_1.2_tpz.txt")
+        option_section, "dndz_filename", default="/home/manzotti/cosmosis/modules/limber/data_input/DES/N_z_wavg_spread_model_0.2_1.2_tpz.txt")
 
     nu = options[option_section, "nu"]
     # nu = np.fromstring(nu, dtype=float, sep=',')
@@ -266,13 +266,13 @@ def execute(block, config):
  # galaxy number density of 10 arc min^-2
 
     print clcib
-    obj = 'des'
+    obj = '_delens'
     section = "limber_spectra"
     block[section, "cldesk" + obj] = clkappades
     block[section, "clcibk" + obj] = clkappacib
-    block[section, "cldes" + obj] = cldes
+    block[section, "cldesdes" + obj] = cldes
     block[section, "cldescib" + obj] = cldescib
-    block[section, "clcib" + obj] = clcib
+    block[section, "clcibcib" + obj] = clcib
     block[section, "clk" + obj] = clkappa
     block[section, "ells_" + obj] = lbins
 

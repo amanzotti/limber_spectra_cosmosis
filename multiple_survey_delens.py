@@ -21,8 +21,6 @@ import ConfigParser
 # values.read(cosmosis_dir + values_file)
 
 
-# lbins = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/ells_des.txt')
-
 
 # ============================================================
 # FIRST EXERCISE
@@ -88,7 +86,7 @@ To add the cmb contribution just add a ckg with value ckk and a cgg with value c
 # ============================================================
 
 
-cosmosis_dir = '/home/manzotti/my_version_cosmosis/'
+cosmosis_dir = '/home/manzotti/cosmosis/'
 inifile = 'des_cib.ini'
 n_slices = 2
 
@@ -98,7 +96,7 @@ values = ConfigParser.ConfigParser()
 Config_ini.read(inifile)
 values_file = Config_ini.get('pipeline', 'values')
 output_dir = Config_ini.get('test', 'save_dir')
-
+output_dir = 'modules/limber/cib_des_delens/'
 values.read(cosmosis_dir + values_file)
 
 
@@ -110,13 +108,13 @@ cgg = np.zeros((3, 3, np.size(lbins)))
 
 ckk = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/clkdes.txt')
 
-noise_cl = np.loadtxt(
-    '/home/manzotti/my_version_cosmosis/cosmosis-standard-library/my_projects/CIB_sherwin/compute_chi2_lensingiswpowerspectrum/multipole_noisebias.txt')
-# check the first ell is the same
-# assert (ells_cmb[0] == noise_cl[0, 0])
-
-noise_cl[:, 1] = noise_cl[:, 1] * noise_cl[:, 0] ** 4 /4. # because the power C_kk is l^4/4 C_phi
-noise_fun = interp1d(noise_cl[:, 0], noise_cl[:, 1])
+noise_cl = np.nan_to_num(np.loadtxt(
+    '/home/manzotti/cosmosis/modules/likelihoods/spt_cosmosis/quicklens/TT_noise_9.0muk_1beam.txt'))
+# # check the first ell is the same
+# # assert (ells_cmb[0] == noise_cl[0, 0])
+ell_clkk = np.arange(len(noise_cl))
+noise_cl = noise_cl * ell_clkk ** 4 /4. # because the power C_kk is l^4/4 C_phi
+noise_fun = interp1d(ell_clkk, noise_cl)
 ckk_noise = np.zeros_like(ckk)
 ckk_noise = noise_fun(lbins)
 
@@ -129,10 +127,10 @@ rho_cib = np.zeros((np.size(lbins)))
 labels = ['des', 'cib']
 
 for i in np.arange(0, n_slices):
-    cgk[i, :] = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/cl' + labels[i] + 'kdes.txt')
+    cgk[i, :] = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/cl' + labels[i] + 'k_delens.txt')
 
     for j in np.arange(i, n_slices):
-        cgg[i, j, :] = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/cl' + labels[i] + labels[j] + 'des.txt')
+        cgg[i, j, :] = np.loadtxt(cosmosis_dir + output_dir + '/limber_spectra/cl' + labels[i] + labels[j] + '_delens.txt')
         cgg[j, i, :] = cgg[i, j, :]
 
 
@@ -160,10 +158,6 @@ np.savetxt(cosmosis_dir + output_dir + '/limber_spectra/rho_cmb.txt', np.vstack(
 np.savetxt(cosmosis_dir + output_dir + '/limber_spectra/rho_comb_des_cib_cmb.txt', np.vstack((lbins, np.sqrt(rho_comb))).T)
 np.savetxt(cosmosis_dir + output_dir + '/limber_spectra/rho_comb_des_cib.txt', np.vstack((lbins, np.sqrt(rho_cib_des))).T)
 
+sys.exit()
 # rho = cgk/np.sqrt(cgg*ckk)
 
-# fig, ax = plt.subplots(figsize=(6,6))
-# cax = ax.matshow(rho)
-# cbar = fig.colorbar(cax)
-# ax.set_aspect('auto')
-# plt.savefig('try2.pdf')
