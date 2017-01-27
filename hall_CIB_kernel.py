@@ -49,7 +49,7 @@ def jbar(nu, z, x, zc=2., sigmaz=2., norm=7.5374829969423142e-15, ssed_kwargs={}
 
 class ssed_kern():
 
-    def __init__(self, h0, zdist, chispline, nu, b=1.0, jbar_kwargs={}, ssed_kwargs={}):
+    def __init__(self, h0, zdist, chispline,hspline, nu, b=1.0, jbar_kwargs={}, ssed_kwargs={}):
         '''
 
          Ref: Hall et. al. Eq. 5. Cl = int dz 1/H(z)/chi(z)^2 (ab j(\nu, z))^2 P_lin(l/chi,z)
@@ -67,6 +67,7 @@ class ssed_kern():
         self.jbar_kwargs = jbar_kwargs
         self.ssed_kwargs = ssed_kwargs
         self.chispline=chispline
+        self.hspline = hspline
 
         for i, z in enumerate(zdist):
             wb[i] = 1. / (1. + z) * self.b * jbar(self.nu, z, chispline(z),
@@ -75,7 +76,7 @@ class ssed_kern():
         self.w_interp = scipy.interpolate.interp1d(zdist, wb)
 
     def w_lxz(self, l, x, z):
-        return 1. / (1. + z) * self.b * jbar(self.nu, z, self.chispline(z),
+        return 1. / (1. + z) * self.b /self.hspline(z) * jbar(self.nu, z, self.chispline(z),
                                              ssed_kwargs=self.ssed_kwargs, **self.jbar_kwargs) / self.h0 ** 3
 
     # Ref: Hall et. al. Eq. 5. Cl = int dz 1/H(z)/chi(z)^2 (ab j(\nu, z))^2 P_lin(l/chi,z)

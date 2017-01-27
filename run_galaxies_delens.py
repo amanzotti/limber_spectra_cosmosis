@@ -176,6 +176,15 @@ def execute(block, config):
     cib = cib_hall.ssed_kern(
         h0, zdist, chispline, hspline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs})
 
+    desi_dndz = np.loadtxt("cosmosis-standard-library/structure/PS_limber/data_input/DESI/DESI_dndz.txt")
+    desi_dndz[:, 1] = np.sum(desi_dndz[:, 1:], axis=1)
+
+    dndzfun_desi = interp1d(desi_dndz[:, 0], desi_dndz[:, 1])
+    norm = scipy.integrate.quad(dndzfun, desi_dndz[0, 0], desi_dndz[-2, 0], limit=100, epsrel=1.49e-03)[0]
+    # normalize
+    dndzfun_desi = interp1d(desi_dndz[:, 0], desi_dndz[:, 1] / norm)
+    desi = gals_kernel.kern(desi_dndz[:, 0], dndzfun_desi, hspline, omega_m, h0, b=1.17)
+
     # DES bias taken from Giannantonio et
     # DES
 
@@ -230,7 +239,7 @@ def execute(block, config):
 
     norm = scipy.integrate.quad(dndzfun, 0.01, 6, limit=100, epsrel=1.49e-03)[0]
     # used the same bias model of euclid. Find something better
-    dndzlsst = interp1d(z_lsst, dndzlsst / norm * 1.*np.sqrt(1.+z_lsst))
+    dndzlsst = interp1d(z_lsst, dndzlsst / norm * 1. * np.sqrt(1. + z_lsst))
     lsst = gals_kernel.kern(z_lsst, dndzlsst, hspline, omega_m, h0, b=1.)
 
     # Euclid
@@ -239,12 +248,11 @@ def execute(block, config):
     dndzfun = interp1d(z_euclid, dndzeuclid)
 
     norm = scipy.integrate.quad(dndzfun, 0.01, 4, limit=100, epsrel=1.49e-03)[0]
-    dndzeuclid = interp1d(z_euclid, dndzeuclid / norm *1.*np.sqrt(1.+z_euclid))
+    dndzeuclid = interp1d(z_euclid, dndzeuclid / norm * 1. * np.sqrt(1. + z_euclid))
     # bias montanari et all for Euclid https://arxiv.org/pdf/1506.01369.pdf
     euclid = gals_kernel.kern(z_euclid, dndzeuclid, hspline, omega_m, h0, b=1.)
 
     # =======
-
 
     clkappa = np.zeros(np.size(lbins))
 
@@ -377,10 +385,10 @@ def execute(block, config):
 
         # print clcib
         cldes = np.array(cldes) + nlgg
-        cleuclideuclid = np.array(cleuclideuclid) + (30/(0.000290888)**2)**(-1)
-        cllsstlsst = np.array(cllsstlsst) + (26/(0.000290888)**2)**(-1)
+        cleuclideuclid = np.array(cleuclideuclid) + (30 / (0.000290888)**2)**(-1)
+        cllsstlsst = np.array(cllsstlsst) + (26 / (0.000290888)**2)**(-1)
 
-        print('doing noisy',(30/(0.000290888)**2)**(-1),(26/(0.000290888)**2)**(-1),nlgg)
+        print('doing noisy', (30 / (0.000290888)**2)**(-1), (26 / (0.000290888)**2)**(-1), nlgg)
 
  #    150 deg2 for the SV area and 5000 deg2 for the full (5-year) survey.
  # 0.00363618733637157 = 150 0.1212062445 = 5000 rem in total in a sphere 4pi rad or 4pi*(180/pi)**2 deg**2

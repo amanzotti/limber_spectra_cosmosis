@@ -42,7 +42,7 @@ class kern():
 
     '''
 
-    def __init__(self, zdist, omm, h0, xlss):
+    def __init__(self, zdist, hspline,omm, h0, xlss):
         wb = np.zeros(np.size(zdist))
         # use the z's from the P(k,z) array
         zmax = zdist[np.size(zdist) - 1]
@@ -54,6 +54,7 @@ class kern():
         self.zmax = zmax
         self.xlss = xlss
         chicmb = xlss
+        self.hspline = hspline
 
     def w_lxz(self, l, x, z):
         '''
@@ -65,4 +66,4 @@ class kern():
         if (z < self.zmax / 1.0001):
             tmp = (1. - chiz / self.xlss)
 
-        return 1.5 * self.omm * (1. + z) * chiz * tmp / 3000. / 3000.
+        return 1.5 * self.omm * (1. + z) * chiz * tmp / 3000. / 3000. / self.hspline(z)
