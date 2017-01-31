@@ -6,6 +6,8 @@ from cosmosis.datablock import names, option_section
 import numpy as np
 import kappa_cmb_kernel as kappa_kernel
 import gals_kernel
+import kappa_gals_kernel
+
 import hall_CIB_kernel as cib_hall
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d, InterpolatedUnivariateSpline
@@ -176,7 +178,7 @@ def execute(block, config):
     cib = cib_hall.ssed_kern(
         h0, zdist, chispline, hspline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs})
 
-    desi_dndz = np.loadtxt("cosmosis-standard-library/structure/PS_limber/data_input/DESI/DESI_dndz.txt")
+    desi_dndz = np.loadtxt("/home/manzotti/cosmosis/modules/limber/data_input/DESI/DESI_dndz.txt")
     desi_dndz[:, 1] = np.sum(desi_dndz[:, 1:], axis=1)
 
     dndzfun_desi = interp1d(desi_dndz[:, 0], desi_dndz[:, 1])
@@ -188,7 +190,10 @@ def execute(block, config):
     # DES bias taken from Giannantonio et
     # DES
 
-    des = gals_kernel.kern(dndz[:, 0], dndzfun, hspline, omega_m, h0, b=1.17)
+    des = gals_kernel.kern(dndz[:, 0], dndzfun, chispline, omega_m, h0, b=1.17)
+
+    # Weak lensing
+
 
     # SKA
     z_ska = np.linspace(0, 10, 600)
@@ -199,7 +204,7 @@ def execute(block, config):
 
     # ===
     dndzfun = interp1d(z_ska, dndzska01)
-    norm = scipy.integrate.quad(dndzfun, z_ska[0], 6, limit=100, epsrel=1.49e-03)[0]
+    norm = scipy.integrate.quad(dndzfun, z_ska[0], 10, limit=100, epsrel=1.49e-03)[0]
     # print(norm)
     # normalize
     dndzska01 = interp1d(z_ska, dndzska01 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=0.1))
@@ -207,7 +212,7 @@ def execute(block, config):
 
     # ===
     dndzfun = interp1d(z_ska, dndzska1)
-    norm = scipy.integrate.quad(dndzfun, z_ska[0], 6, limit=100, epsrel=1.49e-03)[0]
+    norm = scipy.integrate.quad(dndzfun, z_ska[0], 10, limit=100, epsrel=1.49e-03)[0]
     # print(norm)
 
     # normalize
@@ -216,7 +221,7 @@ def execute(block, config):
 
     # ===
     dndzfun = interp1d(z_ska, dndzska5)
-    norm = scipy.integrate.quad(dndzfun, z_ska[0], 6, limit=100, epsrel=1.49e-03)[0]
+    norm = scipy.integrate.quad(dndzfun, z_ska[0], 10, limit=100, epsrel=1.49e-03)[0]
     # print(norm)
 
     # normalize
@@ -225,7 +230,7 @@ def execute(block, config):
 
     # ===
     dndzfun = interp1d(z_ska, dndzska10)
-    norm = scipy.integrate.quad(dndzfun, z_ska[0], 6, limit=100, epsrel=1.49e-03)[0]
+    norm = scipy.integrate.quad(dndzfun, z_ska[0], 10, limit=100, epsrel=1.49e-03)[0]
     # print(norm)
 
     # normalize
@@ -241,6 +246,8 @@ def execute(block, config):
     # used the same bias model of euclid. Find something better
     dndzlsst = interp1d(z_lsst, dndzlsst / norm * 1. * np.sqrt(1. + z_lsst))
     lsst = gals_kernel.kern(z_lsst, dndzlsst, hspline, omega_m, h0, b=1.)
+
+    des_weak = kappa_gals_kernel.kern(z_lsst, dndzlsst, chispline, hspline, omega_m, h0)
 
     # Euclid
     z_euclid = np.linspace(0.0, 5, 200)
@@ -266,7 +273,7 @@ def execute(block, config):
     clcib = np.zeros(np.size(lbins))
     cldescib = np.zeros(np.size(lbins))
     cldes = np.zeros(np.size(lbins))
-
+    cldes_weak = np.zeros(np.size(lbins))
     clska01ska01 = np.zeros(np.size(lbins))
     clska5ska5 = np.zeros(np.size(lbins))
     clska1ska1 = np.zeros(np.size(lbins))
@@ -289,6 +296,12 @@ def execute(block, config):
         limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=lkern, k2=des, zmin=dndz[0, 0], zmax=dndz[-1, 0]) for l in lbins]
 
     print 'clkappades'
+
+    clkappades_weak = [
+        limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=lkern, k2=des_weak, zmin=0.01, zmax=6) for l in lbins]
+
+    print 'clkappades_weak'
+
     clkappacib = [(b / np.sqrt(2.4)) *
                   limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=lkern, k2=cib, zmin=dndz[0, 0], zmax=14.) for l in lbins]
     print 'clkappacib'
@@ -299,6 +312,9 @@ def execute(block, config):
 
     cldes = [limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=des, zmin=dndz[0, 0], zmax=dndz[-1, 0]) for l in lbins]
     print 'cldes'
+    cldes_weak = [limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=des_weak, zmin=0.01, zmax=6) for l in lbins]
+
+    print 'cldes_weak'
 
     cldescib = [limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=des, k2=cib, zmin=dndz[0, 0], zmax=dndz[-1, 0]) for l in lbins]
     print 'cldescib'
@@ -400,6 +416,9 @@ def execute(block, config):
     obj = '_delens'
     section = "limber_spectra"
     block[section, "cldesk" + obj] = clkappades
+    block[section, "cldes_weakk" + obj] = clkappades_weak
+    block[section, "cldes_weakdes_weak" + obj] = cldes_weak
+
     block[section, "clcibk" + obj] = clkappacib
     block[section, "cldesdes" + obj] = cldes
     block[section, "cldescib" + obj] = cldescib
@@ -407,7 +426,7 @@ def execute(block, config):
     block[section, "cllsstlsst" + obj] = cllsstlsst
     block[section, "cllsstk" + obj] = clkappalsst
     block[section, "cleuclideuclid" + obj] = cleuclideuclid
-    block[section, "clkappaeuclid" + obj] = clkappaeuclid
+    block[section, "cleuclidk" + obj] = clkappaeuclid
 
     block[section, "clk" + obj] = clkappa
 

@@ -22,6 +22,7 @@ lsst_area = 18000  # deg^2
 
 #  GENERIC FORMS
 
+
 def dndz_mari_isw_nu(z, z_m):
     z0 = z_m / 1.4
     return 3. / 2. * z**2 / z0**3 * np.exp(-(z / z0)**1.5)
@@ -33,9 +34,9 @@ def dndz_tophat(z, z_min, z_max):
     else:
         return 0.
 
+
 def dndz_gaussian(z, z0, z_width):
     return np.exp(-(z - z0)**2 / (2 * z_width**2))
-
 
 
 def dNdZ_parametric(z, z0, alpha, beta):
@@ -55,31 +56,34 @@ def dNdZ_parametric_LSST(z, z0=0.5, alpha=1.27, beta=1.02):
     return temp
 # EUCLID
 
-def dNdZ_parametric_Euclid(z, zmean = 0.9):
+
+def dNdZ_parametric_Euclid(z, zmean=0.9):
     '''
     from     Montanari https://arxiv.org/pdf/1506.01369.pdf
     '''
-    z0 = zmean /1.412
-    temp = z **2  * np.exp(-(z / z0) ** 1.5)
+    z0 = zmean / 1.412
+    temp = z ** 2 * np.exp(-(z / z0) ** 1.5)
     return temp
 
 # SKA
-def dNdZ_parametric_SKA(z, c2=2.1757,c3=6.6874):
+
+
+def dNdZ_parametric_SKA(z, c2=2.1757, c3=6.6874):
     '''
     from     Montanari https://arxiv.org/pdf/1506.01369.pdf
     this is  is the number of galaxies per redshift and per steradian
     '''
-    temp = z **c2  * np.exp(-c3 *z)
+    temp = z ** c2 * np.exp(-c3 * z)
     return temp
 
-coeffs ={}
-coeffs[0.1] = [-0.0019 ,0.11, 0.20 ,0.76]
-coeffs[1] = [-0.0020 ,0.13 ,0.27 ,0.81]
-coeffs[5] = [-0.0020, 0.16 ,0.37 ,0.89]
-coeffs[10] = [-0.0019 ,0.18 ,0.43 ,0.94]
+coeffs = {}
+coeffs[0.1] = [-0.0019, 0.11, 0.20, 0.76]
+coeffs[1] = [-0.0020, 0.13, 0.27, 0.81]
+coeffs[5] = [-0.0020, 0.16, 0.37, 0.89]
+coeffs[10] = [-0.0019, 0.18, 0.43, 0.94]
 
 
-def dNdZ_SKA_bias(z,mujk):
+def dNdZ_SKA_bias(z, mujk):
     '''
     Model:
     b(z) = b3 + b2z + b1z2 + b0z3
@@ -89,7 +93,7 @@ def dNdZ_SKA_bias(z,mujk):
     -0.0020 0.13 0.27 0.81
     -0.0019 0.11 0.20 0.76
     '''
-    return coeffs[mujk][3] + coeffs[mujk][2]*z + coeffs[mujk][1]*z**2 + coeffs[mujk][0]*z**3
+    return coeffs[mujk][3] + coeffs[mujk][2] * z + coeffs[mujk][1] * z**2 + coeffs[mujk][0] * z**3
 
 
 # total number of sources The total number of radio sources (Ntot) per deg2 given in Table 1
@@ -98,32 +102,37 @@ def dNdZ_SKA_bias(z,mujk):
 # 65128  1
 # 183868 0.1
 
-def dNdZ_parametric_SKA_10mujk(z, p0=0.92,p1=1.04,p2=1.11):
+def dNdZ_parametric_SKA_10mujk(z, p0=0.92, p1=1.04, p2=1.11):
     '''
     from     Blake https://arxiv.org/pdf/1511.04653v2.pdf
     '''
-    temp = z **p0  * np.exp(-p1 *z**p2)
+    temp = z ** p0 * np.exp(-p1 * z**p2)
     return temp
 
-def dNdZ_parametric_SKA_5mujk(z, p0=1.01,p1=1.14,p2=1.02):
+
+def dNdZ_parametric_SKA_5mujk(z, p0=1.01, p1=1.14, p2=1.02):
     '''
     from     Blake https://arxiv.org/pdf/1511.04653v2.pdf
     '''
-    temp = z **p0  * np.exp(-p1 *z**p2)
+    temp = z ** p0 * np.exp(-p1 * z**p2)
     return temp
 
-def dNdZ_parametric_SKA_1mujk(z, p0=1.18,p1=1.22,p2=0.92):
+
+def dNdZ_parametric_SKA_1mujk(z, p0=1.18, p1=1.22, p2=0.92):
     '''
     from     Blake https://arxiv.org/pdf/1511.04653v2.pdf
     '''
-    temp = z **p0  * np.exp(-p1 *z**p2)
+    temp = z ** p0 * np.exp(-p1 * z**p2)
     return temp
-def dNdZ_parametric_SKA_01mujk(z, p0=1.34,p1=1.91,p2=0.64):
+
+
+def dNdZ_parametric_SKA_01mujk(z, p0=1.34, p1=1.91, p2=0.64):
     '''
     from     Blake https://arxiv.org/pdf/1511.04653v2.pdf
     '''
-    temp = z **p0  * np.exp(-p1 *z**p2)
+    temp = z ** p0 * np.exp(-p1 * z**p2)
     return temp
+
 
 class kern():
 
