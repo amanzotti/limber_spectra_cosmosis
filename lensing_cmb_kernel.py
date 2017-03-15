@@ -23,7 +23,7 @@ class kern():
     def __init__(self, zdist, omm, h0, xlss):
         wb = np.zeros(np.size(zdist))
         # use the z's from the P(k,z) array
-        zmax = zdist[np.size(zdist) - 1]
+        print(zdist)
         zmin = zdist[0]
         zmax = zdist[np.size(zdist) - 1]
         self.h0 = h0

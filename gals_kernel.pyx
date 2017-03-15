@@ -165,11 +165,12 @@ class kern():
         self.zmin = zmin
         self.zmax = zmax
         self.dndzfun = dndzfun
-        self.norm = scipy.integrate.quad(dndzfun, self.zmin, self.zmax, limit=100, epsrel=1.49e-03)[0]
-        print(self.norm)
+        self.norm = scipy.integrate.quad(
+            dndzfun, self.zmin, self.zmax, limit=100, epsrel=1.49e-03)[0]
+        print(self.norm, self.zmin, self.zmax)
         self.hspline = hspline
 
-    def w_lxz(self, l, x, z):
+    def w_lxz(self, float l, float x, float z):
         '''
         Galaxies KERNEL (h units):
 
@@ -180,5 +181,8 @@ class kern():
 
         with
        '''
+        cdef double dndz,b
+        dndz = self.dndzfun(z)
+        b = self.b
         # print z,self.dndzfun(z),  self.norm  , self.b
-        return self.dndzfun(z) * self.b
+        return dndz * self.b

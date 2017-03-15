@@ -11,7 +11,7 @@ import scipy.integrate
 import sys
 
 
-def cl_limber_x(z_chi, p_kz, l, k1, k2=None, xmin=0.0, xmax=13000.):
+cdef double cl_limber_x(z_chi, p_kz, l, k1, k2=None, xmin=0.0, xmax=13000.):
     """ calculate the cross-spectrum at multipole l between kernels k1 and k2 in the limber approximation. Comoving distance version. See  cl_limber_z for the redshift version.
 
 
@@ -38,21 +38,23 @@ def cl_limber_x(z_chi, p_kz, l, k1, k2=None, xmin=0.0, xmax=13000.):
     if k2 == None:
         k2 = k1
 
-        def integrand(x):
+        def integrand(double x):
+            cdef double z
             z = z_chi(x)
             return 1. / x /x * k1.w_lxz(l, x, z)**2 * self.p_kz(l / x, z)
 
     else:
 
-        def integrand(x):
+        def integrand(double x):
+            cdef double z
             z = z_chi(x)
             return 1. / x /x * k1.w_lxz(l, x, z) * k2.w_lxz(l, x, z) * self.p_kz(l / x, z)
 
 
-    return scipy.integrate.quad(integrand, xmin, xmax, limit=300, epsrel=1.49e-05)[0]
+    return scipy.integrate.quad(integrand, xmin, xmax, limit=300, epsrel=1.49e-06)[0]
 
 
-def cl_limber_z(chi_z, hspline, rbs, l, k1, k2=None, zmin=0.0, zmax=1100.):
+cdef double cl_limber_z(chi_z, hspline, rbs, l, k1, k2=None, double zmin=0.0, double zmax=1100.):
     """ calculate the cross-spectrum at multipole l between kernels k1 and k2 in the limber approximation. redshift  version. See  cl_limber_x for the comoving distance version
    Notes: Here everything is assumed in h units. Maybe not the best choice but that is it.
 
@@ -77,18 +79,28 @@ def cl_limber_z(chi_z, hspline, rbs, l, k1, k2=None, zmin=0.0, zmax=1100.):
     if k2 == None:
         k2 = k1
 
-        def integrand(z):
+        def integrand(double z):
+            cdef double x,h,k1,pk
             x = chi_z(z)
-            return 1. / x/x * hspline(z) * k1.w_lxz(l, x, z)**2 * rbs.ev((l + 0.5) / x, z)
+            h =hspline(z)
+            k1 = k1.w_lxz(l, x, z)**2
+            pk=rbs.ev((l + 0.5) / x, z)
+            return 1. / x/x * h * k1 * pk
 
     else:
 
-        def integrand(z):
+        def integrand(double z):
+            cdef double x,h,k1,k2,pk
             x = chi_z(z)
-            return 1. / x /x * hspline(z) * k1.w_lxz(l, x, z) * k2.w_lxz(l, x, z) * rbs.ev((l + 0.5) / x, z)
+            h =hspline(z)
+            k1 = k1.w_lxz(l, x, z)
+            k2 = k2.w_lxz(l, x, z)
+
+            pk=rbs.ev((l + 0.5) / x, z)
+            return 1. / x /x * h * k1 * k2 * pk
 
     # print 'here' ,integrand(0.5)
 
     # sys.exit()
 
-    return scipy.integrate.quad(integrand, zmin, zmax, limit=300, epsrel=1.49e-05)[0]
+    return scipy.integrate.quad(integrand, zmin, zmax, limit=300, epsrel=1.49e-06)[0]
