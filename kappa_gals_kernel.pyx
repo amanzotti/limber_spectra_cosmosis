@@ -62,11 +62,11 @@ class kern():
         self.dndzfun = dndzfun
         self.chispline = chispline
         self.hspline = hspline
-        integrate_range = np.linspace(zmin* 1.01, zmax/ 1.0001, int(np.round(zmax - zmin) * 90))
+        integrate_range = np.linspace(zmin* 1.01, zmax/ 1.0001, int(np.round(zmax - zmin) * 100))
         temp_chiz = np.zeros_like(integrate_range)
         for i, z in enumerate(integrate_range):
             # tmp = self.dndzfun(z) * (1. - self.chispline(z) / self.chispline(z))
-            temp_chiz[i] = scipy.integrate.quad(wint, z, self.zmax / 1.01, args=(self.chispline(z), self.dndzfun, self.chispline), limit=200, epsrel=1.49e-05)[0]
+            temp_chiz[i] = scipy.integrate.quad(wint, z, self.zmax / 1.05, args=(self.chispline(z), self.dndzfun, self.chispline), limit=200, epsrel=1.49e-05)[0]
         # print 'interval', integrate_range[1] - integrate_range[0]
         self.temp_chiz = InterpolatedUnivariateSpline(integrate_range, temp_chiz)
 

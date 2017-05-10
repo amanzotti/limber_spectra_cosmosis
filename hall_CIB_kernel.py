@@ -17,14 +17,25 @@ EVERYTHING IS IN h UNITS
 
 import numpy as np
 import scipy
-import util
+# import util
+# constants
+h    = 6.626068e-34   # J.s planck constant
+c    = 299792458.     # m/s speed of light
+k    = 1.3806504e-23  # m^2 kg s^{-2} K^{-1} boltzmann constant
+tcmb = 2.7255         # K cmb temperature (Fixsen et. al. 2009)
 
 alpha_mid_ir = -2.
 nu_mid_ir = 4954611330474.7109
 
 
+def planck(nu, T):
+    """ returns the planck blackbody function (in W sr^{-1} Hz^{-1})
+    at frequency \nu (in Hz) for a blackbody with temperature T (in K). """
+    return 2 * h * nu**3 / c**2 / (np.exp(h * nu / k / T) - 1.)
+
+
 def ssed_graybody(nu, Td=34., beta=2):
-    return nu ** (beta) * util.planck(nu, Td)
+    return nu ** (beta) * planck(nu, Td)
 
 
 def ssed(nu, Td=34., beta=2., alpha_mid_ir=alpha_mid_ir, nu_mid_ir=nu_mid_ir):

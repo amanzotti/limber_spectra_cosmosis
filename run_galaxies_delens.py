@@ -1,16 +1,17 @@
 '''
 '''
 
-import pyximport; pyximport.install()
-
+import pyximport
+pyximport.install(reload_support=True)
 from cosmosis.datablock import names, option_section
 import numpy as np
 import kappa_cmb_kernel as kappa_kernel
 import gals_kernel
+reload(gals_kernel)
 import kappa_gals_kernel
 import hall_CIB_kernel as cib_hall
 import scipy.integrate
-from scipy.interpolate import RectBivariateSpline, interp1d,InterpolatedUnivariateSpline
+from scipy.interpolate import RectBivariateSpline, interp1d, InterpolatedUnivariateSpline
 import limber_integrals
 # We have a collection of commonly used pre-defined block section names.
 # If none of the names here is relevant for your calculation you can use any
@@ -62,8 +63,8 @@ def setup(options):
 
 def execute(block, config):
     from profiling.sampling import SamplingProfiler
-    profiler = SamplingProfiler()
-    profiler.start()
+    # profiler = SamplingProfiler()
+    # profiler.start()
     # Just a simple rename for clarity.
     lbins, blockname, zmin, zmax, dndz_filename, nu, zc, zs, b, noisy = config
 
@@ -119,9 +120,9 @@ def execute(block, config):
     # DEFINE KERNELs
     # CIB
     # j2k = 1.e-6 / np.sqrt(83135.)  # for 353
-    lkern = kappa_kernel.kern(zdist, hspline, chispline,omega_m, h0, xlss)
+    lkern = kappa_kernel.kern(zdist, hspline, chispline, omega_m, h0, xlss)
     cib = cib_hall.ssed_kern(
-        h0, zdist, chispline, hspline, nu, jbar_kwargs={'zc': 2.0, 'sigmaz': zs})
+        h0, zdist, chispline, hspline, nu, b=0.5, jbar_kwargs={'zc': 2.0, 'sigmaz': zs})
 
     desi_dndz = np.loadtxt("/home/manzotti/cosmosis/modules/limber/data_input/DESI/DESI_dndz.txt")
     desi_dndz[:, 1] = np.sum(desi_dndz[:, 1:], axis=1)
@@ -138,6 +139,14 @@ def execute(block, config):
 
     des = gals_kernel.kern(dndz[:, 0], dndzfun, chispline, omega_m, h0, b=1.17)
 
+    # WISE
+    wise_dn_dz = np.loadtxt('/home/manzotti/galaxies_delensing/wise_dn_dz.txt')
+    dndzwise = InterpolatedUnivariateSpline(wise_dn_dz[:, 0], wise_dn_dz[:, 1], k=3, ext='zeros')
+    norm = dndzwise.integral(0, 2)
+    dndzwise = InterpolatedUnivariateSpline(
+        wise_dn_dz[:, 0], wise_dn_dz[:, 1] / norm, ext='zeros')
+    wise = gals_kernel.kern(wise_dn_dz[:, 0], dndzwise, hspline, omega_m, h0, b=1.)
+
     # Weak lensing
 
     # SKA
@@ -152,7 +161,8 @@ def execute(block, config):
     norm = scipy.integrate.quad(dndzfun, z_ska[0], z_ska[-1], limit=100, epsrel=1.49e-03)[0]
     # print(norm)
     # normalize
-    dndzska01 = InterpolatedUnivariateSpline(z_ska, dndzska01 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=0.1))
+    dndzska01 = InterpolatedUnivariateSpline(
+        z_ska, dndzska01 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=0.1))
     ska01 = gals_kernel.kern(z_ska, dndzska01, hspline, omega_m, h0, b=1.)
 
     # ===
@@ -161,7 +171,8 @@ def execute(block, config):
     # print(norm)
 
     # normalize
-    dndzska1 = InterpolatedUnivariateSpline(z_ska, dndzska1 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=1))
+    dndzska1 = InterpolatedUnivariateSpline(
+        z_ska, dndzska1 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=1))
     ska1 = gals_kernel.kern(z_ska, dndzska1, hspline, omega_m, h0, b=1.)
 
     # ===
@@ -170,7 +181,8 @@ def execute(block, config):
     # print(norm)
 
     # normalize
-    dndzska5 = InterpolatedUnivariateSpline(z_ska, dndzska5 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=5))
+    dndzska5 = InterpolatedUnivariateSpline(
+        z_ska, dndzska5 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=5))
     ska5 = gals_kernel.kern(z_ska, dndzska5, hspline, omega_m, h0, b=1.)
 
     # ===
@@ -179,7 +191,8 @@ def execute(block, config):
     # print(norm)
 
     # normalize
-    dndzska10 = InterpolatedUnivariateSpline(z_ska, dndzska10 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=10))
+    dndzska10 = InterpolatedUnivariateSpline(
+        z_ska, dndzska10 / norm * gals_kernel.dNdZ_SKA_bias(z_ska, mujk=10))
     ska10 = gals_kernel.kern(z_ska, dndzska10, hspline, omega_m, h0, b=1.)
 
     # LSST
@@ -196,25 +209,35 @@ def execute(block, config):
 
     # Euclid
     z_euclid = np.linspace(0.01, 5, 200)
-    dndzeuclid = gals_kernel.dNdZ_parametric_Euclid(z_euclid)
+    z_mean = 0.9
+    dndzeuclid = gals_kernel.dNdZ_parametric_Euclid(z_euclid, z_mean)
+    # dndzeuclid_deriv = gals_kernel.dNdZ_deriv_Euclid_ana(z_euclid,0.9)
+    z_mean_array = np.linspace(0.9 - 0.4, 0.9 + 0.4, 200)
+    dndzeuclid_param = RectBivariateSpline(
+        z_mean_array, z_euclid, gals_kernel.dNdZ_parametric_Euclid_fulld(z_euclid, z_mean_array))
     dndzfun = interp1d(z_euclid, dndzeuclid)
+    # dndzeuclid_deriv_fun = interp1d(
+    #     z_euclid, dndzeuclid_param.__call__(z_mean, z_euclid, dx=1, dy=0))
 
+    # sys.exit()
     norm = scipy.integrate.quad(dndzfun, 0.01, 4, limit=100, epsrel=1.49e-03)[0]
-    dndzeuclid = InterpolatedUnivariateSpline(z_euclid, dndzeuclid / norm * 1. * np.sqrt(1. + z_euclid))
+    # norm_deriv = scipy.integrate.quad(dndzeuclid_deriv_fun, 0.01, 4, limit=100, epsrel=1.49e-03)[0]
+    # dndzeuclid_deriv_fun = InterpolatedUnivariateSpline(
+    #     z_euclid, dndzeuclid_deriv_fun / norm_deriv * 1. * np.sqrt(1. + z_euclid))
+    dndzeuclid = InterpolatedUnivariateSpline(
+        z_euclid, dndzeuclid / norm * 1. * np.sqrt(1. + z_euclid))
     # bias montanari et all for Euclid https://arxiv.org/pdf/1506.01369.pdf
+
     euclid = gals_kernel.kern(z_euclid, dndzeuclid, hspline, omega_m, h0, b=1.)
 
     # =======
     # Compute Cl implicit loops on ell
     # =======================
 
-    kernels = [lkern, euclid, des_weak, lsst, ska10, ska01, ska5, ska1, cib, desi, des]
-    names = ['k', 'euclid', 'des_weak', 'lsst', 'ska10', 'ska01',
-             'ska5', 'ska1' 'cib', 'desi', 'des']
+    kernels = [wise, lkern, euclid, des_weak, lsst, ska10, ska01, ska5, ska1, cib, desi, des]
+    names = ['wise', 'k', 'euclid', 'des_weak', 'lsst', 'ska10',
+             'ska01', 'ska5', 'ska1', 'cib', 'desi', 'des']
 
-    kernels = [lkern, ska10, ska01, ska5, ska1]
-    names = ['k', 'ska10', 'ska01',
-             'ska5', 'ska1']
     cls = {}
     for i in np.arange(0, len(kernels)):
         for j in np.arange(i, len(kernels)):
@@ -223,11 +246,16 @@ def execute(block, config):
             cls[names[i] + names[j]] = [
                 limber_integrals.cl_limber_z(chispline, hspline, rbs, l, k1=kernels[i], k2=kernels[j], zmin=max(kernels[i].zmin, kernels[j].zmin), zmax=min(kernels[i].zmax, kernels[j].zmax)) for l in lbins]
 
+    # cls['cib_fitcib_fit'] = [3500. * (1. * l / 3000.)**(-1.25) for l in lbins]
+    # cls['kcib_fit'] = cls['kcib']
+
     if noisy:
         print('Adding noise')
         # From Planck model, chenged a little bit to match Blake levels
         # print clcib
-        # cls['cibcib'] = np.array(cls['cibcib']) + 525.
+        cls['cibcib'] = np.array(cls['cibcib']) + 525.
+        # cls['cib_fitcib_fit'] = np.array(cls['cib_fitcib_fit']) + 525.
+
         # from
         cls['ska01ska01'] = np.array(cls['ska01ska01']) + 1. / (183868. * 3282.80635)
         cls['ska1ska1'] = np.array(cls['ska1ska1']) + 1. / (65128. * 3282.80635)
@@ -241,17 +269,21 @@ def execute(block, config):
         # from Giannantonio Fosalba
         # galaxy number density of 10 arc min^-2
 
+        arcmin_to_rad = np.pi / 180. / 60
+        gal_arcmnin2 = 3.51
+        gal_rad_sq = gal_arcmnin2 / arcmin_to_rad**2
         degree_sq = 500
         rad_sq = degree_sq * (np.pi / 180)**2
         # fsky = rad_sq / 4. / np.pi
         n_gal = 3207184.
+        print(1. / (n_gal / rad_sq))
         # they mention N=2.1 10^-8 in Fosalba Giann
-        # nlgg = 1. / (n_gal / rad_sq) * np.ones_like(cls['desdes'])
+        nlgg = 1 / gal_rad_sq * np.ones_like(cls['desdes'])
 
-        # cls['desdes'] = np.array(cls['desdes']) + nlgg
-        # # ===============================================
-        # cls['euclideuclid'] = np.array(cls['euclideuclid']) + (30 / (0.000290888)**2)**(-1)
-        # cls['lsstlsst'] = np.array(cls['lsstlsst']) + (26 / (0.000290888)**2)**(-1)
+        cls['desdes'] = np.array(cls['desdes']) + nlgg
+        # ===============================================
+        cls['euclideuclid'] = np.array(cls['euclideuclid']) + (30 / (0.000290888)**2)**(-1)
+        cls['lsstlsst'] = np.array(cls['lsstlsst']) + (26 / (0.000290888)**2)**(-1)
 
     # SAVE
     obj = '_delens'
@@ -262,8 +294,8 @@ def execute(block, config):
             block[section, "cl_" + names[i] + names[j] + obj] = cls[names[i] + names[j]]
 
     block[section, "ells_" + obj] = lbins
-    profiler.stop()
-    profiler.run_viewer()
+    # profiler.stop()
+    # profiler.run_viewer()
     return 0
 
     # =======================

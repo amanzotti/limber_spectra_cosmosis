@@ -54,10 +54,39 @@ def dNdZ_parametric_LSST(z, z0=0.5, alpha=1.27, beta=1.02):
     '''
     temp = (z / z0) ** alpha * np.exp(-(z / z0) ** beta)
     return temp
+
+
+def dNdZ_parametric_LSST_2d_alpha(z, alpha, z0=0.5, beta=1.02):
+    '''
+    usual paramteric form of galaxies distribution
+    '''
+    X, Y = np.meshgrid(z, alpha)
+    temp = (X / z0) ** Y * np.exp(-(X / z0) ** beta)
+    return temp
+
+
+def dNdZ_parametric_LSST_2d_z0(z, z0, alpha=1.27, beta=1.02):
+    '''
+    usual paramteric form of galaxies distribution
+    '''
+    X, Y = np.meshgrid(z, z0)
+    temp = (X / Y) ** alpha * np.exp(-(X / Y) ** beta)
+    return temp
+
+
+def dNdZ_parametric_LSST_2d_beta(z, beta, z0=0.5, alpha=1.27, ):
+    '''
+    usual paramteric form of galaxies distribution
+    '''
+    X, Y = np.meshgrid(z, beta)
+    temp = (X / z0) ** alpha * np.exp(-(X / z0) ** Y)
+    return temp
+
+
 # EUCLID
 
 
-def dNdZ_parametric_Euclid(z, zmean=0.9):
+def dNdZ_parametric_Euclid(z, zmean):
     '''
     from     Montanari https://arxiv.org/pdf/1506.01369.pdf
     '''
@@ -65,7 +94,54 @@ def dNdZ_parametric_Euclid(z, zmean=0.9):
     temp = z ** 2 * np.exp(-(z / z0) ** 1.5)
     return temp
 
+
+def dNdZ_parametric_Euclid_fulld(z, zmean):
+    '''
+    from     Montanari https://arxiv.org/pdf/1506.01369.pdf
+    '''
+    z0 = zmean / 1.412
+    Z, Z0 = np.meshgrid(z, z0)
+    temp = Z ** 2 * np.exp(-(Z / Z0) ** 1.5)
+    return temp
+
+
+def dNdZ_deriv_Euclid_ana(z, zmean):
+    '''
+    from     Montanari https://arxiv.org/pdf/1506.01369.pdf
+    '''
+    z0 = zmean / 1.412
+    temp = (1.5 * np.exp(-(z / z0)**1.5) * z**3 * (z / z0)**0.5) / z0**2
+
+    return temp / 1.412
+
+
 # SKA
+
+# def dNdZ_parametric_SKA_derivative(z, mujk, param):
+
+#     coeffs = {}
+#     coeffs[0.1] = [-0.0019, 0.11, 0.20, 0.76]
+#     coeffs[1] = [-0.0020, 0.13, 0.27, 0.81]
+#     coeffs[5] = [-0.0020, 0.16, 0.37, 0.89]
+#     coeffs[10] = [-0.0019, 0.18, 0.43, 0.94]
+
+#     if param == 'p1':
+#         return (coeffs[mujk][3] + coeffs[mujk][2] * z + coeffs[mujk][1] * z**2 + coeffs[mujk][0] * z**3) * np.exp(-p1 * z**p2) * np.log(z)
+#     elif param == 'p2':
+#         return (coeffs[mujk][3] + coeffs[mujk][2] * z + coeffs[mujk][1] * z**2 + coeffs[mujk][0] * z**3) * np.exp(-p1 * z**p2) * z**(p0 + p2)
+#     elif param == 'p3':
+#         return (coeffs[mujk][3] + coeffs[mujk][2] * z + coeffs[mujk][1] * z**2 + coeffs[mujk][0] * z**3) * np.exp(-p1 * z**p2) * p1 * z**(p0 + p2) * np.log(z)
+#     elif param == 'b0':
+#         return np.exp(-p1 * z**p1) * z**(3. + p1)
+#     elif param == 'b1':
+#         return np.exp(-p1 * z**p1) * z**(2. + p1)
+#     elif param == 'b2':
+#         return np.exp(-p1 * z**p1) * z**(1. + p1)
+#     elif param == 'b3':
+#         return np.exp(-p1 * z**p1) * z**(p1)
+
+#     else:
+#         raise ValueError('wrong parameter')
 
 
 def dNdZ_parametric_SKA(z, c2=2.1757, c3=6.6874):
@@ -181,7 +257,7 @@ class kern():
 
         with
        '''
-        cdef double dndz,b
+        cdef double dndz, b
         dndz = self.dndzfun(z)
         b = self.b
         # print z,self.dndzfun(z),  self.norm  , self.b
