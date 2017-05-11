@@ -1,6 +1,5 @@
 '''
 '''
-
 import pyximport
 pyximport.install(reload_support=True)
 from cosmosis.datablock import names, option_section
@@ -13,6 +12,7 @@ import hall_CIB_kernel as cib_hall
 import scipy.integrate
 from scipy.interpolate import RectBivariateSpline, interp1d, InterpolatedUnivariateSpline
 import limber_integrals
+import Pickle as pk
 # We have a collection of commonly used pre-defined block section names.
 # If none of the names here is relevant for your calculation you can use any
 # string you want instead.
@@ -103,6 +103,11 @@ def execute(block, config):
 
     # LOAD DNDZ
     # =======================
+    # alternative dndz from Sam email
+
+    res = pk.load(open('/home/manzotti/cosmosis/modules/limber/data_input/DES/des.pkl'))
+    spline = res['spline']
+    N = res['N']
     dndz = np.loadtxt(dndz_filename)
     dndzfun = InterpolatedUnivariateSpline(dndz[:, 0], dndz[:, 1], ext=2)
     norm = scipy.integrate.quad(dndzfun, dndz[0, 0], dndz[-2, 0], limit=100, epsrel=1.49e-03)[0]
@@ -145,6 +150,8 @@ def execute(block, config):
     norm = dndzwise.integral(0, 2)
     dndzwise = InterpolatedUnivariateSpline(
         wise_dn_dz[:, 0], wise_dn_dz[:, 1] / norm, ext='zeros')
+    # Biased was measured equal to 1 in Feerraro et al. WISE ISW measureament
+    # by cross correlating with planck lensing
     wise = gals_kernel.kern(wise_dn_dz[:, 0], dndzwise, hspline, omega_m, h0, b=1.)
 
     # Weak lensing
@@ -234,8 +241,8 @@ def execute(block, config):
     # Compute Cl implicit loops on ell
     # =======================
 
-    kernels = [wise, lkern, euclid, des_weak, lsst, ska10, ska01, ska5, ska1, cib, desi, des]
-    names = ['wise', 'k', 'euclid', 'des_weak', 'lsst', 'ska10',
+    kernels = [lkern, wise, euclid, des_weak, lsst, ska10, ska01, ska5, ska1, cib, desi, des]
+    names = ['k', 'wise', 'euclid', 'des_weak', 'lsst', 'ska10',
              'ska01', 'ska5', 'ska1', 'cib', 'desi', 'des']
 
     cls = {}
